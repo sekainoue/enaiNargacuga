@@ -25,7 +25,7 @@ namespace enaiNargacuga
         public void OnMonsterEnrage(Monster monster)
         {
             if (_monster == null) return;
-            if (_monster.Type == MonsterType.Nargacuga) { _actionCounts = 21; }
+            if (_monster.Type == MonsterType.Nargacuga) { _actionCounts = 22; }
         }
         public void OnMonsterUnenrage(Monster monster)
         {
@@ -39,9 +39,12 @@ namespace enaiNargacuga
             if (_monster.Type == MonsterType.Nargacuga && _actionCounts > 0)  
             {
                 if (_actionCounts == 20) { _transparentMode = true; }
-                if (_actionCounts == 13) { _transparentMode = false; }
-                if (_actionCounts == 9) { _transparentMode = true; }
-                if (_actionCounts == 1) { _actionCounts += 13; }
+                if (_actionCounts == 16) { _transparentMode = false; }
+                if (_actionCounts == 13) { _transparentMode = true; }
+                if (_actionCounts == 10) { _transparentMode = false; }
+                if (_actionCounts == 7) { _transparentMode = true; }
+                if (_actionCounts == 4) { _transparentMode = false; }
+                if (_actionCounts == 1) { _actionCounts += 21; }
                 _actionCounts -= 1;
             }
             if (_monster.Type == MonsterType.Nargacuga && _actionCounts == 0)
