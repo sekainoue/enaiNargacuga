@@ -29,7 +29,10 @@ namespace enaiNargacuga
         private const int _framesForMessage = 60;
         private Monster? _monster;
         private uint _lastStage;
-        public void OnMonsterCreate(Monster monster) { uint stageID = (uint)Area.CurrentStage; _lastStage = stageID; }
+        public void OnMonsterCreate(Monster monster) 
+        { 
+            uint stageID = (uint)Area.CurrentStage; _lastStage = stageID; 
+        }
         public void OnQuestLeave(int questId) { _monster = null; _inQuest = false; _actionCounts = 0; _transparentMode = false; }
         public void OnQuestComplete(int questId) { _monster = null; _inQuest = false; _actionCounts = 0; _transparentMode = false; }
         public void OnQuestFail(int questId) { _monster = null; _inQuest = false; _actionCounts = 0; _transparentMode = false; }
@@ -57,7 +60,7 @@ namespace enaiNargacuga
 
         public void OnMonsterAction(Monster monster, ref int actionId)
         {
-            if (_monster != null && _monster != null && _monster.Type == MonsterType.Nargacuga && _actionCounts > 0)  
+            if (_monster != null && _monster.Type == MonsterType.Nargacuga && _actionCounts > 0)  
             {
                 if (_actionCounts == 12) { _transparentMode = true; } if (_actionCounts == 9) { _transparentMode = false; } if (_actionCounts == 8) { _transparentMode = true; }
                 if (_actionCounts == 6) { _transparentMode = false; } if (_actionCounts == 4) { _transparentMode = true; } if (_actionCounts == 2) { _transparentMode = false; }
@@ -111,22 +114,24 @@ namespace enaiNargacuga
                     _monster = monster;
                 }
             }
+
             if (!_modEnabled) return;
-            if (_monster == null)
-                return;
-
+            if (_monster == null) return;
             ref float transparency = ref _monster.GetRef<float>(0x314);
-
             if (transparency < 0.05f) { transparency = 0.05f; }
             else if (transparency > 1.0f) { transparency = 1.0f; }
 
-
-            if (!_transparentMode) {
+            if (!_transparentMode)
+            {
                 if (transparency < 1f) { transparency += 0.025f; }
                 else { transparency = 1f; }
-            } else { 
-                transparency -= 0.025f; 
             }
+            else
+            {
+                transparency -= 0.025f;
+            }
+            if (_monster == null)
+                return;
 
             if (_nargaDies) { _actionCounts = 0; _transparentMode = false; }
         }
