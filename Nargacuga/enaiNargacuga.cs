@@ -1,9 +1,6 @@
 ﻿using ImGuiNET;
 using SharpPluginLoader.Core;
 using SharpPluginLoader.Core.Entities;
-using SharpPluginLoader.Core.IO;
-using System;
-using System.Threading;
 
 namespace enaiNargacuga
 {
@@ -29,46 +26,78 @@ namespace enaiNargacuga
         private const int _framesForMessage = 60;
         private Monster? _monster;
         private uint _lastStage;
-        public void OnMonsterCreate(Monster monster) 
-        { 
-            uint stageID = (uint)Area.CurrentStage; _lastStage = stageID; 
+        private void ResetState()
+        {
+            _monster = null;
+            _actionCounts = 0;
+            _transparentMode = false;
+            _nargaDies = false;
         }
-        public void OnQuestLeave(int questId) { _monster = null; _inQuest = false; _actionCounts = 0; _transparentMode = false; }
-        public void OnQuestComplete(int questId) { _monster = null; _inQuest = false; _actionCounts = 0; _transparentMode = false; }
-        public void OnQuestFail(int questId) { _monster = null; _inQuest = false; _actionCounts = 0; _transparentMode = false; }
-        public void OnQuestReturn(int questId) { _monster = null; _inQuest = false; _actionCounts = 0; _transparentMode = false; }
-        public void OnQuestAbandon(int questId) { _monster = null; _inQuest = false; _actionCounts = 0; _transparentMode = false; }
-        public void OnQuestEnter(int questId) { _monster = null; _inQuest = true; _actionCounts = 0; _transparentMode = false; }
-        public void OnMonsterDestroy(Monster monster) { 
-            if (_monster != null && _monster.Type == MonsterType.Nargacuga) { 
-                _monster = null; _transparentMode = false; _actionCounts = 0;
+        public void OnMonsterCreate(Monster monster) 
+        {
+            _lastStage = (uint)Area.CurrentStage;
+        }
+        public void OnQuestLeave(int questId) { ResetState(); _inQuest = false; }
+        public void OnQuestComplete(int questId) { ResetState(); _inQuest = false; }
+        public void OnQuestFail(int questId) { ResetState(); _inQuest = false; }
+        public void OnQuestReturn(int questId) { ResetState(); _inQuest = false; }
+        public void OnQuestAbandon(int questId) { ResetState(); _inQuest = false; }
+        public void OnQuestEnter(int questId) { ResetState(); _inQuest = true; }
+        public void OnMonsterDestroy(Monster monster) 
+        { 
+            if (_monster != null && _monster.Type == MonsterType.Nargacuga && _monster == monster) 
+            {
+                ResetState();
             } 
         }
-        public void OnMonsterDeath(Monster monster) { 
-            if (_monster != null && _monster.Type == MonsterType.Nargacuga) { 
-                _monster = null; _nargaDies = true; _actionCounts = 0;
+        public void OnMonsterDeath(Monster monster) 
+        { 
+            if (_monster != null && _monster.Type == MonsterType.Nargacuga && _monster == monster) 
+            { 
+                _nargaDies = true; 
+                _actionCounts = 0;
+                _monster = null;
             } 
         }
         public void OnMonsterEnrage(Monster monster)
         {
-            if (_monster != null && _monster.Type == MonsterType.Nargacuga) { _actionCounts = 15; }
+            if (_monster != null && _monster.Type == MonsterType.Nargacuga && _monster == monster)
+            { 
+                _actionCounts = 15; 
+            }
         }
         public void OnMonsterUnenrage(Monster monster)
         {
-            if (_monster != null && _monster.Type == MonsterType.Nargacuga) { _actionCounts = 0; }
+            if (_monster != null && _monster.Type == MonsterType.Nargacuga && _monster == monster) 
+            { 
+                _actionCounts = 0; 
+            }
         }
 
         public void OnMonsterAction(Monster monster, ref int actionId)
         {
-            if (_monster != null && _monster.Type == MonsterType.Nargacuga && _actionCounts > 0)  
+            if (_monster != null && _monster.Type == MonsterType.Nargacuga && _monster == monster)  
             {
-                if (_actionCounts == 12) { _transparentMode = true; } if (_actionCounts == 9) { _transparentMode = false; } if (_actionCounts == 8) { _transparentMode = true; }
-                if (_actionCounts == 6) { _transparentMode = false; } if (_actionCounts == 4) { _transparentMode = true; } if (_actionCounts == 2) { _transparentMode = false; }
-                if (_actionCounts == 1) { _actionCounts += 14; } _actionCounts -= 1;
-            }
-            if (_monster != null && _monster.Type == MonsterType.Nargacuga && _actionCounts == 0)
-            {
-                _transparentMode = false;
+                if (_actionCounts > 0)
+                {
+                    if (_actionCounts == 12 || _actionCounts == 0 || _actionCounts == 4)
+                    {
+                        _transparentMode = true;
+                    }
+                    if (_actionCounts == 9 || _actionCounts == 6 || _actionCounts == 2)
+                    {
+                        _transparentMode = false;
+                    }
+                    if (_actionCounts == 1)
+                    {
+                        _actionCounts += 14;
+                    }
+                    _actionCounts--;
+                }
+                if (_actionCounts == 0)
+                {
+                    _transparentMode = false;
+                }
             }
         }
 
@@ -78,17 +107,14 @@ namespace enaiNargacuga
             if (player == null) return;
             if (ImGui.Button("LUNARUGA"))
             {
-                if (_inQuest) {
+                if (_inQuest) 
+                {
                     _statusMessage = "Cannot toggle while in quest.";
-                } else {
-                    if (_modEnabled) 
-                    { 
-                        _modEnabled = false; _statusMessage = "LuNarga disabled."; 
-                    }
-                    else
-                    {
-                        _modEnabled = true; _statusMessage = "LuNarga enabled.";
-                    }
+                } 
+                else 
+                {
+                    _modEnabled = !_modEnabled;
+                    _statusMessage = _modEnabled ? "LuNarga enabled." : "LuNarga disabled.";
                 }
                 _frameCountdown = _framesForMessage;
             }
@@ -102,38 +128,44 @@ namespace enaiNargacuga
         {
             var player = Player.MainPlayer;
             if (player == null) return;
+
             if ((uint)Area.CurrentStage != _lastStage)
             {
-                _monster = null;
+                ResetState();
             }
+
+            if (!_modEnabled) return;
+
             var monsters = Monster.GetAllMonsters().TakeLast(5).ToArray();
             foreach (var monster in monsters)
             {
                 if (monster.Type == MonsterType.Nargacuga)
                 {
                     _monster = monster;
+                    break; // Assumes only handling one Nargacuga at a time.
                 }
             }
 
-            if (!_modEnabled) return;
             if (_monster == null) return;
+
             ref float transparency = ref _monster.GetRef<float>(0x314);
-            if (transparency < 0.05f) { transparency = 0.05f; }
-            else if (transparency > 1.0f) { transparency = 1.0f; }
+            transparency = Clamp(transparency, 0.05f, 1.0f);
 
             if (!_transparentMode)
             {
-                if (transparency < 1f) { transparency += 0.025f; }
-                else { transparency = 1f; }
+                transparency = Math.Min(transparency + 0.025f, 1f);
             }
             else
             {
                 transparency -= 0.025f;
             }
-            if (_monster == null)
-                return;
 
-            if (_nargaDies) { _actionCounts = 0; _transparentMode = false; }
+            if (_nargaDies)
+            {
+                _actionCounts = 0;
+                _transparentMode = false;
+                _nargaDies = false;
+            }
         }
     }
 }
