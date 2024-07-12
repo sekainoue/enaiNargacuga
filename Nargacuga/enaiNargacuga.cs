@@ -24,7 +24,7 @@ namespace enaiNargacuga
         private string _statusMessage = "";
         private int _frameCountdown = 0;
         private const int _framesForMessage = 60;
-        private Monster? _monster;
+        private Monster? _monster = null;
         private uint _lastStage;
         private void ResetState()
         {
